@@ -1,7 +1,23 @@
+
+private string _shortGridName;
+
+public string ShortGridName
+{
+    get { 
+    if(string.IsNullOrEmpty(_shortGridName))
+    {
+        _shortGridName = GetShortGridName();
+    }
+                
+    return _shortGridName;
+     }
+}
+
 public Program()
 {
     // Set the update frequency to every 10 seconds
     Runtime.UpdateFrequency = UpdateFrequency.Update10;
+
 }
 
 public void Main(string argument)
@@ -9,7 +25,12 @@ public void Main(string argument)
 
     if (argument == "SETNAMES")
     {
-        SetNames();
+        Echo($"Phase {GetShortGridName()}. will be added in front of functional blocks.");
+        SetNames(NamingFunctionSetNames);
+    }
+    else if (argument == "UNSETNAMES")
+    {
+        SetNames(NamingFunctionUnsetNames);
     }
     else if (argument == "SETHOME")
     {
@@ -121,13 +142,9 @@ private void ShipManagement()
     }
 }
 
-private void SetNames()
+private void SetNames(Func<string, string> namingFunction)
 {
     // Code for setting names goes here
-
-        var gridNameCapitalLetters = GetShortGridName();
-
-        Echo($"Phase {gridNameCapitalLetters}. will be added in front of functional blocks.");
 
         // Get all the connectors on the grid
         var connectors = new List<IMyShipConnector>();
@@ -137,10 +154,7 @@ private void SetNames()
         // Rename the connectors
         foreach (var connector in connectors)
         {
-            if (!connector.CustomName.Contains("."))
-            {
-                connector.CustomName = $"{gridNameCapitalLetters}.{connector.CustomName}";
-            }
+            connector.CustomName = namingFunction(connector.CustomName);
         }
 
         // Get all the turrets on the grid
@@ -151,10 +165,7 @@ private void SetNames()
         // Rename the turrets
         foreach (var turret in turrets)
         {
-            if (!turret.CustomName.Contains("."))
-            {
-                turret.CustomName = $"{gridNameCapitalLetters}.{turret.CustomName}";
-            }
+            turret.CustomName = namingFunction(turret.CustomName);
         }
 
         // // Create a new group for the turrets
@@ -179,10 +190,7 @@ private void SetNames()
         // Rename the batteries
         foreach (var battery in batteries)
         {
-            if (!battery.CustomName.Contains("."))
-            {
-                battery.CustomName = $"{gridNameCapitalLetters}.{battery.CustomName}";
-            }
+            battery.CustomName = namingFunction(battery.CustomName);
         }
 
         // Get all the remote controllers on the grid
@@ -193,11 +201,7 @@ private void SetNames()
         // Rename the remote controllers
         foreach (var remoteController in remoteControllers)
         {
-            // Check if the remote controller's name already has a dot
-            if (!remoteController.CustomName.Contains("."))
-            {
-                remoteController.CustomName = $"{gridNameCapitalLetters}.{remoteController.CustomName}";
-            }
+            remoteController.CustomName = namingFunction(remoteController.CustomName);
         }
 
         // Get all the hydrogen tanks on the grid
@@ -208,10 +212,7 @@ private void SetNames()
         // Rename the hydrogen tanks
         foreach (var hydrogenTank in hydrogenTanks)
         {
-            if (!hydrogenTank.CustomName.Contains("."))
-            {
-                hydrogenTank.CustomName = $"{gridNameCapitalLetters}.{hydrogenTank.CustomName}";
-            }
+            hydrogenTank.CustomName = namingFunction(hydrogenTank.CustomName);
         }
 
         // Get all the programming blocks on the grid
@@ -222,10 +223,7 @@ private void SetNames()
         // Rename the programming blocks
         foreach (var programmingBlock in programmingBlocks)
         {
-            if (!programmingBlock.CustomName.Contains("."))
-            {
-                programmingBlock.CustomName = $"{gridNameCapitalLetters}.{programmingBlock.CustomName}";
-            }
+            programmingBlock.CustomName = namingFunction(programmingBlock.CustomName);
         }
 
         // Get all the timer blocks on the grid
@@ -236,10 +234,7 @@ private void SetNames()
         // Rename the timer blocks
         foreach (var timerBlock in timerBlocks)
         {
-        if (!timerBlock.CustomName.Contains("."))
-            {
-                timerBlock.CustomName = $"{gridNameCapitalLetters}.{timerBlock.CustomName}";
-            }
+            timerBlock.CustomName = namingFunction(timerBlock.CustomName);
         }
 
         // Get all the gyroscopes on the grid
@@ -250,10 +245,7 @@ private void SetNames()
         // Rename the gyroscopes
         foreach (var gyroscope in gyroscopes)
         {
-            if (!gyroscope.CustomName.Contains("."))
-            {
-                gyroscope.CustomName = $"{gridNameCapitalLetters}.{gyroscope.CustomName}";
-            }
+            gyroscope.CustomName = namingFunction(gyroscope.CustomName);
         }
 
         // Get all the gatling guns on the grid
@@ -264,10 +256,7 @@ private void SetNames()
         // Rename the gatling guns
         foreach (var gatlingGun in gatlingGuns)
         {
-        if (!gatlingGun.CustomName.Contains("."))
-            {
-                gatlingGun.CustomName = $"{gridNameCapitalLetters}.{gatlingGun.CustomName}";
-            }
+            gatlingGun.CustomName = namingFunction(gatlingGun.CustomName);
         }
 
         // Get all the cockpits on the grid
@@ -278,10 +267,7 @@ private void SetNames()
         // Rename the cockpits
         foreach (var cockpit in cockpits)
         {
-            if (!cockpit.CustomName.Contains("."))
-            {
-                cockpit.CustomName = $"{gridNameCapitalLetters}.{cockpit.CustomName}";
-            }
+            cockpit.CustomName = namingFunction(cockpit.CustomName);
         }
 
         // Get all the cameras on the grid
@@ -292,10 +278,7 @@ private void SetNames()
         // Rename the cameras
         foreach (var camera in cameras)
         {
-            if (!camera.CustomName.Contains("."))
-            {
-                camera.CustomName = $"{gridNameCapitalLetters}.{camera.CustomName}";
-            }
+            camera.CustomName = namingFunction(camera.CustomName);
         }
     
     
@@ -307,11 +290,7 @@ private void SetNames()
         // Rename the antennas
         foreach (var antenna in antennas)
         {
-            if (!antenna.CustomName.Contains("."))
-            {
-                antenna.CustomName = $"{gridNameCapitalLetters}.{antenna.CustomName}";
-            }
-        
+            antenna.CustomName = namingFunction(antenna.CustomName);
         }
 
         // Get all the reactors on the grid
@@ -322,10 +301,7 @@ private void SetNames()
         // Rename the reactors
         foreach (var reactor in reactors)
         {
-            if (!reactor.CustomName.Contains("."))
-            {
-                reactor.CustomName = $"{gridNameCapitalLetters}.{reactor.CustomName}";
-            }
+            reactor.CustomName = namingFunction(reactor.CustomName);
         }
 
         // Get all the thrusters on the grid
@@ -336,10 +312,7 @@ private void SetNames()
         // Rename the thrusters
         foreach (var thruster in thrusters)
         {
-            if (!thruster.CustomName.Contains("."))
-            {
-                thruster.CustomName = $"{gridNameCapitalLetters}.{thruster.CustomName}";
-            }
+            thruster.CustomName = namingFunction(thruster.CustomName);
         }
 }
 
@@ -508,4 +481,23 @@ private IMyRemoteControl GetRemoteControl(string nameEnd = "Dock")
     }
 
     return remoteControls.FirstOrDefault();
+}
+
+private string NamingFunctionSetNames(string oldCustomName)
+{
+    if (!oldCustomName.Contains("."))
+    {
+        var sortName = ShortGridName;
+        return $"{sortName}.{oldCustomName}";
+    }
+    return oldCustomName;
+}
+
+private string NamingFunctionUnsetNames(string oldCustomName)
+{
+    if (oldCustomName.Contains("."))
+    {
+        return oldCustomName.Split('.')[1];
+    }
+    return oldCustomName;
 }
