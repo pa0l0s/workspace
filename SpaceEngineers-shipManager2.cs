@@ -1,4 +1,3 @@
-
 private string _shortGridName;
 
 public string ShortGridName
@@ -17,7 +16,6 @@ public Program()
 {
     // Set the update frequency to every 10 seconds
     Runtime.UpdateFrequency = UpdateFrequency.Update10;
-
 }
 
 public void Main(string argument)
@@ -25,11 +23,12 @@ public void Main(string argument)
 
     if (argument == "SETNAMES")
     {
-        Echo($"Phase {GetShortGridName()}. will be added in front of functional blocks.");
+        Echo($"Phase {ShortGridName}. will be added in front of functional blocks.");
         SetNames(NamingFunctionSetNames);
     }
     else if (argument == "UNSETNAMES")
     {
+        Echo($"Remove front namepart with dot for functional blocks.");
         SetNames(NamingFunctionUnsetNames);
     }
     else if (argument == "SETHOME")
@@ -314,6 +313,60 @@ private void SetNames(Func<string, string> namingFunction)
         {
             thruster.CustomName = namingFunction(thruster.CustomName);
         }
+
+        var engines = new List<IMyHydrogenEngine>();
+        GridTerminalSystem.GetBlocksOfType(engines);
+        engines = engines.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyHydrogenEngine engine in engines)
+        {
+            engine.CustomName = namingFunction(engine.CustomName);
+        }
+
+        List<IMyBeacon> beacons = new List<IMyBeacon>();
+        GridTerminalSystem.GetBlocksOfType(beacons);
+        beacons = beacons.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyBeacon beacon in beacons)
+        {
+            beacon.CustomName = namingFunction(beacon.CustomName);
+        }
+
+        List<IMyGasGenerator> generators = new List<IMyGasGenerator>();
+        GridTerminalSystem.GetBlocksOfType(generators);
+        generators = generators.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyGasGenerator generator in generators)
+        {
+            generator.CustomName = namingFunction(generator.CustomName);
+        }
+
+        List<IMyLandingGear> gears = new List<IMyLandingGear>();
+        GridTerminalSystem.GetBlocksOfType(gears);
+        gears = gears.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyLandingGear gear in gears)
+        {
+            gear.CustomName = namingFunction(gear.CustomName);
+        }
+
+        List<IMyTextPanel> panels = new List<IMyTextPanel>();
+        GridTerminalSystem.GetBlocksOfType(panels);
+        panels = panels.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyTextPanel panel in panels)
+        {
+            panel.CustomName = namingFunction(panel.CustomName);
+        }
+
+        List<IMyProjector> projectors = new List<IMyProjector>();
+        GridTerminalSystem.GetBlocksOfType(projectors);
+        projectors = projectors.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+        foreach (IMyProjector projector in projectors)
+        {
+            projector.CustomName = namingFunction(projector.CustomName);
+        }
 }
 
 private void SetHome()
@@ -481,6 +534,18 @@ private IMyRemoteControl GetRemoteControl(string nameEnd = "Dock")
     }
 
     return remoteControls.FirstOrDefault();
+}
+
+private void RenameBlocks<T>(Func<string, string> namingFunction) where T : class, IMyTerminalBlock
+{
+    List<T> blocks = new List<T>();
+    GridTerminalSystem.GetBlocksOfType(blocks);
+    blocks = blocks.Where(x => x.IsSameConstructAs(Me)).ToList();
+
+    foreach (T block in blocks)
+    {
+        block.CustomName = namingFunction(block.CustomName);
+    }
 }
 
 private string NamingFunctionSetNames(string oldCustomName)
