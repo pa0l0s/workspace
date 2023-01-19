@@ -12,10 +12,25 @@ public string ShortGridName
      }
 }
 
+private IMyCockpit _cockpit;
+public IMyCockpit Cockpit
+{
+    get {
+        if(_cockpit==null)
+        {
+            _cockpit = GetBlock<IMyCockpit>();
+            ConfigureTextSurface(_cockpit.GetSurface(0));
+        }
+        return _cockpit;
+    }
+}
+
 public Program()
 {
     // Set the update frequency to every 10 seconds
     Runtime.UpdateFrequency = UpdateFrequency.Update10;
+
+
 }
 
 public void Main(string argument)
@@ -43,8 +58,11 @@ public void Main(string argument)
 
 private void ShipManagement()
 {
+    var firstScreenText = new StringBuilder();
+    //firstScreenText.Append("\n");
+
     // Get the connector block
-    var connector = GetConnector("Dock");
+    var connector = GetBlock<IMyShipConnector>();
     if (connector == null)
     {
         Echo("Connector not found");
@@ -53,24 +71,66 @@ private void ShipManagement()
     //Echo($"Connector found {connector.CustomName}");
 
     // Get all the battery blocks on the grid
-    var batteries = new List<IMyBatteryBlock>();
-    GridTerminalSystem.GetBlocksOfType(batteries);
-    batteries=batteries.Where(x => x.IsSameConstructAs(Me)).ToList();
-    batteries.RemoveAt(0); //One battery remain ucontrolled tu support programming block work
+    var batteries = GetBlocksOnSameGrid<IMyBatteryBlock>(); 
+    if (batteries.Count>1)
+    {
+        batteries.RemoveAt(0); //One battery remain ucontrolled tu support programming block work
+    }
+    double avgStoredPower = GetAverageCurrentStoredPower(batteries);
+    Echo(string.Format("Battery average power: {0:P}", avgStoredPower));
+    // Get the first timer block on the grid
+    var timerBlocks = GetBlocksOnSameGrid<IMyTimerBlock>(); 
+
+    firstScreenText.Append(string.Format("Bp: {0:P}\n", avgStoredPower));
+
+    var remoteController = GetBlock<IMyRemoteControl>();
+    if (remoteController.IsAutoPilotEnabled)
+    {
+        List<MyWaypointInfo> waypoints = new List<MyWaypointInfo>();
+        remoteController.GetWaypointInfo(waypoints);
+        Vector3D currentPosition = remoteController.GetPosition();
+
+        if(waypoints.Count>0)
+        {
+            MyWaypointInfo waypoint = waypoints[waypoints.Count-1]; //Get last waypoint
+            double distance = (currentPosition - waypoint.Coords).Length();
+
+            Echo(string.Format("Autopilot distance: {0:0.00}m", distance));
+            firstScreenText.Append(string.Format("Home: {0:0.00}m\n", distance));
+
+        }
+    }
 
     // Check if the connector is locked
     if (connector.Status == MyShipConnectorStatus.Connected)
     {
         // Set the charge mode to "Recharge" if any battery has a level below 90%
-        foreach (var battery in batteries)
+        if (avgStoredPower < 0.8)
         {
-            if (battery.CurrentStoredPower / battery.MaxStoredPower < 0.9)
+            foreach (var battery in batteries)
             {
                 battery.ChargeMode = ChargeMode.Recharge;
             }
-            else if (battery.CurrentStoredPower / battery.MaxStoredPower > 0.95)
+        }
+        else if (avgStoredPower > 0.95)
+        {
+            foreach (var battery in batteries)
             {
                 battery.ChargeMode = ChargeMode.Auto;
+            }
+
+            // Get all the hydrogen engine blocks on the grid
+            var hydrogenEngines = GetBlocksOnSameGrid<IMyPowerProducer>().Where(x => x.CustomName.Contains("Engine")).ToList();
+            // Turn on the hydrogen engines
+            foreach (var hydrogenEngine in hydrogenEngines)
+            {
+                //hydrogenEngine.Enabled = false;
+            }
+
+            var reactors = GetBlocksOnSameGrid<IMyReactor>();
+            foreach (var reactor in reactors)
+            {
+                reactor.Enabled = false;
             }
         }
     }
@@ -79,44 +139,38 @@ private void ShipManagement()
     {
         foreach (var battery in batteries)
         {
+            battery.Enabled = true;
             battery.ChargeMode = ChargeMode.Auto;
         }
     }
 
     // Check if the battery level is below 50%
-    var lowPower = false;
-    foreach (var battery in batteries)
-    {
-        if (battery.CurrentStoredPower / battery.MaxStoredPower < 0.5)
-        {
-            lowPower = true;
-            break;
-        }
-    }
-
-    // If the battery level is below 50%, turn on the hydrogen engines
-    if (lowPower)
+    if (avgStoredPower < 0.5)
     {
         // Get all the hydrogen engine blocks on the grid
-        var hydrogenEngines = new List<IMyPowerProducer>();
-        GridTerminalSystem.GetBlocksOfType(hydrogenEngines);
-        hydrogenEngines=hydrogenEngines.Where(x => x.IsSameConstructAs(Me)).ToList();
+        var hydrogenEngines = GetBlocksOnSameGrid<IMyPowerProducer>();//.Where(x => x.CustomName.Contains("Engine")).ToList();
         // Turn on the hydrogen engines
         foreach (var hydrogenEngine in hydrogenEngines)
         {
             hydrogenEngine.Enabled = true;
         }
+
+        var reactors = GetBlocksOnSameGrid<IMyReactor>();
+        foreach (var reactor in reactors)
+        {
+            reactor.Enabled = true;
+        }
+
     }
 
     // Check if the battery level is below 20%
-    if (batteries.Any(battery => battery.CurrentStoredPower / battery.MaxStoredPower < 0.2))
+    if (avgStoredPower < 0.2)
     {
-
-        // Get the Timer Block named "AFV2.Timer Block Dock"
-        var timerBlock = GridTerminalSystem.GetBlockWithName("AFV2.Timer Block Dock") as IMyTimerBlock;
+        // Get the Timer Block 
+        var timerBlockDock = GetBlock<IMyTimerBlock>(blocks: timerBlocks);
 
         // Check if the Timer Block is active and counting
-        if (timerBlock != null && timerBlock.IsCountingDown)
+        if (timerBlockDock != null && timerBlockDock.IsCountingDown)
         {
             // Do not turn on the autopilot
             return;
@@ -125,9 +179,6 @@ private void ShipManagement()
         // If the connector is not locked, turn on the autopilot
         if (connector.Status != MyShipConnectorStatus.Connected)
         {
-
-            // Get the remote controller
-            var remoteController = GetRemoteControl();
             if (remoteController != null)
             {
                 // Turn on the autopilot
@@ -138,7 +189,25 @@ private void ShipManagement()
                 Echo("No Remote Control");
             }
         }
+
+        firstScreenText.Append("LOW POWER\n");
     }
+
+    var firstScreen = Cockpit?.GetSurface(0);
+    if(firstScreen!=null)
+    {
+        firstScreen.WriteText(firstScreenText.ToString());
+    }
+}
+
+private double GetAverageCurrentStoredPower(List<IMyBatteryBlock> batteries)
+{
+    double totalStoredPower = 0;
+    foreach (var battery in batteries)
+    {
+        totalStoredPower += (battery.CurrentStoredPower/battery.MaxStoredPower);
+    }
+    return totalStoredPower / batteries.Count;
 }
 
 private void SetNames(Func<string, string> namingFunction)
@@ -153,7 +222,7 @@ private void SetHome()
 
     
         // Get all the remote controller on the grid
-        var remoteController = GetRemoteControl();
+        var remoteController = GetBlock<IMyRemoteControl>();
 
         if (remoteController != null)
         {
@@ -193,10 +262,7 @@ private void SetHome()
             var waypoint3 = new MyWaypointInfo(gridNameCapitalLetters + ".Dock",
                 remoteController.GetPosition());
 
-            // Get the first timer block on the grid
-            var timerBlocks = new List<IMyTimerBlock>();
-            GridTerminalSystem.GetBlocksOfType(timerBlocks);
-            var timerBlockDock = timerBlocks.FirstOrDefault();
+            var timerBlockDock = GetBlock<IMyTimerBlock>();
 
             // Check if the timer block's name does not already end with "Dock"
             if (timerBlockDock != null )
@@ -210,12 +276,11 @@ private void SetHome()
                     timerBlockDock.Silent = true;
                     timerBlockDock.TriggerDelay = 1; //1s
 
-                    Echo($"{timerBlockDock.InventoryCount}");
+                    //Echo($"{timerBlockDock.InventoryCount}");
+                }
 
                     // Get the first connector on the grid
-                    var connectors = new List<IMyShipConnector>();
-                    GridTerminalSystem.GetBlocksOfType(connectors);
-                    var connectorDock = connectors.FirstOrDefault();
+                    var connectorDock = GetBlock<IMyShipConnector>();
 
                     // Check if the connector's name does not already end with "Dock"
                     if (connectorDock != null)
@@ -239,7 +304,7 @@ private void SetHome()
 
                     // Add the action to the waypoint
                     //waypoint3.AddAction("Activate Timer", timerBlockDock.CustomName);
-                }
+                
             }
 
 
@@ -278,40 +343,18 @@ private string GetShortGridName()
         return gridNameCapitalLetters;
 }
 
-// Find the connector with "Dock" in its name or the first connector in the current construct
-private IMyShipConnector GetConnector(string nameEnd = "Dock")
+private T GetBlock<T>(string nameEnd = "Dock", List<T> blocks = null) where T : class, IMyTerminalBlock
 {
-    // Get all the connector blocks on the grid
-    var connectors = new List<IMyShipConnector>();
-    GridTerminalSystem.GetBlocksOfType(connectors);
-
-    // Filter the connectors by the current construct and the specified name end
-    connectors = connectors.Where(x => x.IsSameConstructAs(Me)).ToList();
-
-    if(connectors.Any(x => x.CustomName.EndsWith(nameEnd)))
+    if (blocks == null)
     {
-        return connectors.Where(x => x.CustomName.EndsWith(nameEnd)).FirstOrDefault();
+        blocks = GetBlocksOnSameGrid<T>();
+    }
+    if (blocks.Any(x => x.CustomName.EndsWith(nameEnd)))
+    {
+        return blocks.Where(x => x.CustomName.EndsWith(nameEnd)).FirstOrDefault();
     }
 
-    return connectors.FirstOrDefault();
-}
-
-// Find the remote control with the specified name end in its name or the first remote control in the current construct
-private IMyRemoteControl GetRemoteControl(string nameEnd = "Dock")
-{
-    // Get all the remote control blocks on the grid
-    var remoteControls = new List<IMyRemoteControl>();
-    GridTerminalSystem.GetBlocksOfType(remoteControls);
-
-    // Filter the remote controls by the current construct and the specified name end
-    remoteControls = remoteControls.Where(x => x.IsSameConstructAs(Me)).ToList();
-
-    if(remoteControls.Any(x => x.CustomName.EndsWith(nameEnd)))
-    {
-        return remoteControls.Where(x => x.CustomName.EndsWith(nameEnd)).FirstOrDefault();
-    }
-
-    return remoteControls.FirstOrDefault();
+    return blocks.FirstOrDefault();
 }
 
 public void RenameBlocksByType<T>(Func<string, string> namingFunction, bool isFunctional = true) where T : class, IMyTerminalBlock
@@ -325,6 +368,14 @@ public void RenameBlocksByType<T>(Func<string, string> namingFunction, bool isFu
         block.CustomName = namingFunction(block.CustomName);
     }
 }
+
+private List<T> GetBlocksOnSameGrid<T>() where T : class, IMyTerminalBlock
+{
+    var blocks = new List<T>();
+    GridTerminalSystem.GetBlocksOfType(blocks);
+    return blocks.Where(x => x.IsSameConstructAs(Me) && !x.CustomName.Contains("Ignore")).ToList();
+}
+
 
 private string NamingFunctionSetNames(string oldCustomName)
 {
@@ -343,4 +394,19 @@ private string NamingFunctionUnsetNames(string oldCustomName)
         return oldCustomName.Split('.')[1];
     }
     return oldCustomName;
+}
+
+public void ConfigureTextSurface(IMyTextSurface surface)
+{
+    surface.ContentType = VRage.Game.GUI.TextPanel.ContentType.TEXT_AND_IMAGE;
+    surface.Font = "DEBUG";
+    surface.FontSize = 1.8f;
+    surface.Alignment = VRage.Game.GUI.TextPanel.TextAlignment.CENTER;
+    //surface.Padding = new VRage.Game.GUI.TextPanel.LinePadding(0.1f, 0.1f, 0.1f, 0.1f);
+    surface.TextPadding = 5;
+    surface.FontColor = new Color(250,150,50);
+
+    //string CurrentlyShownImage
+    surface.ClearImagesFromSelection();
+    surface.AddImageToSelection("Clear");
 }
