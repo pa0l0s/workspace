@@ -2,6 +2,7 @@ cameras:
   kuchnia:
     enabled: True
     ffmpeg:
+      hwaccel_args: preset-vaapi
       inputs:
         - path: rtsp://192.168.0.75:554/live/ch00_0
           roles:
