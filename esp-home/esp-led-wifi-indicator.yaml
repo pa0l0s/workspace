@@ -1,0 +1,22 @@
+interval:
+  - interval: 1s
+    then:
+      if:
+        condition:
+          wifi.connected:
+        then:
+          - if:
+              condition:
+                api.connected:
+              then:
+                - switch.turn_on: test_wifi_connected
+                - delay: 200ms
+                - switch.turn_off: test_wifi_connected
+                - delay: 200ms
+              else:
+                - switch.turn_on: test_wifi_connected
+                - delay: 500ms
+                - switch.turn_off: test_wifi_connected
+                - delay: 500ms
+        else:
+          - switch.turn_off: test_wifi_connected 

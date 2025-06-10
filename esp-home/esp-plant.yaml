@@ -1,0 +1,84 @@
+esphome:
+  name: esp-plant
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "lHqW/HtPh19UCbYLWBu+4BWjCpCdzqnxMPcmPaRXgTc="
+
+ota:
+  password: "d7220e191e2b344ad31daaef170151df"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp-Plant Fallback Hotspot"
+    password: "2UvnFD3fncF2"
+
+captive_portal:
+    
+switch:
+  - platform: gpio
+    pin: 
+      number: D3
+      inverted: false
+    name: "WaterPump"
+    icon: "mdi:watering-can"
+
+  - platform: gpio
+    pin: 
+      number: D4
+      inverted: false
+    name: "PlantLamp"
+    icon: "mdi:lightbulb-on"
+
+sensor:
+  - platform: dht
+    pin: D2
+    temperature:
+      name: "Plant Temperature"
+      accuracy_decimals: 1
+    humidity:
+      name: "Plant Humidity"
+      accuracy_decimals: 1
+    model: "DHT22"
+    update_interval: 20s
+
+  - platform: adc
+    id: source_sensor
+    pin: A0
+    name: "SoilWetLevel"
+    update_interval: 20s
+    accuracy_decimals: 4
+
+  - platform: template
+    name: "Plant Soil Moisture"
+    id: soil_moisture_p
+    unit_of_measurement: "%"
+    lambda: |
+      float x=100-((source_sensor->raw_state-0.44)/((0.75-0.44)/100));
+      if (x>100) return 100;
+      if (x<0) return 0;
+      return x;
+    update_interval: 20s
+    accuracy_decimals: 1
+    icon: "mdi:sprout"
+
+  - platform: template
+    name: "Plant Soil Sensor OK"
+    id: plant_soil_mesurement_ok
+    lambda: |
+      if (source_sensor->raw_state>0.75) return false;
+      if (source_sensor->raw_state<0.44) return false;
+      return true;
+    update_interval: 20s
+    icon: "mdi:sprout"

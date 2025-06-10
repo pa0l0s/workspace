@@ -1,0 +1,48 @@
+esphome:
+  name: esp32-wiatrak-maciek
+  friendly_name: esp32-wiatrak-maciek
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "niVj7C6yDLM/1c0tJlJMBYS/Ax+r8rVFTYrS489Twho="
+
+ota:
+  password: "4ed55449b5520617b4daaeb116723ca4"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp32-Wiatrak-Maciek"
+    password: "BXax5N3LgFVN"
+
+captive_portal:
+
+switch:
+  - platform: gpio
+    pin: 
+      number: GPIO32
+      inverted: true
+    name: "Wiatrak lazienka"
+    icon: "mdi:fan"
+  - platform: gpio
+    pin: 
+      number: GPIO33
+      inverted: true
+    name: "Kanal 2"
+    icon: "mdi:led-outline"
+
+    #niVj7C6yDLM/1c0tJlJMBYS/Ax+r8rVFTYrS489Twho=
+    #192.168.0.186
+    #f4gcvWUF9MLx5l2POEYBUppoceRhAPf01wzejo2Rw48=

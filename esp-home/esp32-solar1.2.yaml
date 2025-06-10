@@ -1,0 +1,125 @@
+esphome:
+  name: esp32-solar
+  friendly_name: esp32-solar
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "+cVy6OEfACNdQOk6vLpZf5BAhd6fnzh0Rs4jOBg4Gzk="
+
+ota:
+  password: "108e08ede407f98ac2f178a846d5632d"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp32-Solar Fallback Hotspot"
+    password: "Op4rUwiIEVVh"
+# Example configuration entry
+#deep_sleep:
+  #run_duration: 2min
+  #sleep_duration: 5min
+
+captive_portal:
+
+# Example configuration entry
+switch:
+  - platform: gpio
+    pin: 
+      number: GPIO21
+      inverted: false
+    name: "blue_led"
+    id: blue_led
+    icon: "mdi:led-outline"
+
+sensor:
+  - platform: dht
+    pin: GPIO32
+    temperature:
+      name: "ESP32 Solar Temperature"
+    humidity:
+      name: "ESP32 Solar Humidity"
+    update_interval: 30s
+   
+  - platform: adc
+    id: source_sensor
+    pin: GPIO35 #ADC7 #GPIO35
+    name: "ESP32 Solar Li-pol voltage"
+    attenuation: 11db
+    update_interval: 30s
+    accuracy_decimals: 4
+    filters:
+      - multiply: 1.27 #out = (Vin*R2)/(R1+R2) 
+      #if we use R1=27k Ohm, and R2=100k Ohm, we get: Vout = (4.2*100k)/(27k + 100k) = 3.3V
+binary_sensor:  
+  - platform: homeassistant
+    name: "Prevent Deep Sleep"
+    entity_id: input_boolean.prevent_deep_sleep
+    internal: true
+    id: "prevent_deep_sleep"
+    # on_state:
+    #   - if:
+    #       condition:
+    #         - binary_sensor.is_on: prevent_deep_sleep
+    #         #lambda: 'return id(prevent_deep_sleep).state;'
+    #       then:
+    #         #– logger.log: "deep_sleep.prevent"
+    #         - deep_sleep.prevent: deep_sleep_1
+    #       else:
+    #         #– logger.log: 'deep_sleep.allow'
+    #         - deep_sleep.allow: deep_sleep_1
+
+# interval:
+#   - interval: 10s
+#     then:
+#       if:
+#         condition:
+#           wifi.connected:
+#         then:
+#           - switch.turn_on: blue_led
+#         else:
+#           - switch.turn_off: blue_led
+interval:
+  - interval: 10s
+    then:
+      if:
+        condition:
+          - binary_sensor.is_off: prevent_deep_sleep
+        then:
+          if:
+            condition:
+              wifi.connected:
+            then:
+              - delay: 60s
+              - deep_sleep.allow: deep_sleep_1
+              - deep_sleep.enter: deep_sleep_1
+
+          # - deep_sleep.prevent: deep_sleep_1
+          # - switch.turn_on: red_led
+        else:
+          if:
+            condition:
+               wifi.connected:
+            then:
+              - deep_sleep.prevent: deep_sleep_1
+              - switch.turn_on: blue_led
+            else:
+              - deep_sleep.prevent: deep_sleep_1
+              - switch.turn_off: blue_led
+
+
+deep_sleep:
+  id: deep_sleep_1
+  run_duration: 150s
+  sleep_duration: 20min

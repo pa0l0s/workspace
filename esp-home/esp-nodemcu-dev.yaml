@@ -1,0 +1,57 @@
+esphome:
+  name: esp-nodemcu-dev
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "YydhrZQmRX66OibfmtlnEWgBhb416YpkRR/iNVTIT5I="
+
+ota:
+  password: "d3fd20fdf9d9bb084a033fab02104e75"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp-Nodemcu-Dev Fallback Hotspot"
+    password: "DV2Dwoa2bqRi"
+
+captive_portal:
+
+switch:
+  - platform: gpio
+    pin: 
+      number: D2
+      inverted: false
+    name: "Dev-2"
+    icon: "mdi:led-outline"
+  - platform: gpio
+    pin: 
+      number: D3
+      inverted: false
+    name: "Dev-3"
+    icon: "mdi:led-outline"
+  - platform: gpio
+    pin: 
+      number: D4
+      inverted: false
+    name: "Dev-4"
+    icon: "mdi:led-outline"
+
+sensor:    
+  - platform: adc
+    id: source_sensor
+    pin: A0
+    name: "Dev-sens-A0"
+    update_interval: 20s
+    accuracy_decimals: 4
+
+    #/0bhle/UmbsmcRR19yd/Jjwdsn2G1bFMSKfze1izY70=
