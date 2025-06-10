@@ -1,3 +1,4 @@
+  GNU nano 7.2                                               /home/docker/config/frigate/config.yml                                                         
 # yaml-language-server: $schema=http://192.168.0.24:8971/api/config/schema.json
 
 # Optional: Database configuration
@@ -6,17 +7,46 @@ database:
   path: /config/frigate.db
 
 snapshots:
-  enabled: True
+  enabled: true
   timestamp: true
   bounding_box: true
   retain:
     default: 30
 mqtt:
-  enabled: False
+  enabled: false
 #  host: 192.168.200.14
 
-record:
+cameras:
+  przyczepa:
+    enabled: true
+    ffmpeg:
+      hwaccel_args: preset-vaapi
+      inputs:
+        - path: rtsp://motioneye:ProsteHaslo1@192.168.60.117:554/Streaming/Channels/102/
+          roles:
+            - record
+            - detect
+    detect:
+      width: 640 # <---- update for your camera's resolution
+      height: 360 # <---- update for your camera's resolution
+      fps: 10  
+    webui_url: http://192.168.60.117
+
+objects:
+  track:
+    - person
+    - dog
+    - cat
+    
+snapshots:
   enabled: True
+  timestamp: true
+  bounding_box: true
+  retain: 
+    default: 30
+
+record:
+  enabled: true
   retain:
     days: 3
     mode: all
@@ -28,14 +58,5 @@ record:
     retain:
       days: 30
       mode: motion
-      
-cameras:
-  przyczepa:
-    enabled: True
-    ffmpeg:
-      inputs:
-        - path: rtsp://motioneye:ProsteHaslo1@192.168.60.117:554/Streaming/Channels/101/
-          roles:
-            - detect
-            - record
-    webui_url: "http://192.168.60.117"
+
+version: 0.15-1
