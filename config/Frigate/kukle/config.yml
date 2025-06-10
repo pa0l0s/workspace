@@ -1,27 +1,10 @@
-cameras:
-  kuchnia:
-    enabled: True
-    ffmpeg:
-      inputs:
-        - path: rtsp://motioneye:ProsteHaslo1@192.168.60.117:554/Streaming/Channels/101/
-          roles:
-            - detect
-            - record
-    detect:
-      width: 1920 # <---- update for your camera's resolution
-      height: 1080 # <---- update for your camera's resolution
-      fps: 10
+# yaml-language-server: $schema=http://192.168.0.24:8971/api/config/schema.json
+
 # Optional: Database configuration
 database:
   # The path to store the SQLite DB (default: shown below)
   path: /config/frigate.db
-
-objects:
-  track:
-    - person
-    - dog
-    - cat
-
+  
 snapshots:
   enabled: True
   timestamp: true
@@ -47,15 +30,15 @@ record:
       mode: motion
 
 ffmpeg:
-  hwaccel_args:
-    - vaapi
-  #hwaccel_args: preset-vaapi
-  #hwaccel_args:
-  #  - -hwaccel
-  #  - vaapi
-  #  - -hwaccel_device
-  #  - /dev/dri/renderD128
-  #  - -hwaccel_output_format
-  #  - yuv420p
-  output_args:
-     record: -f segment -segment_time 10 -segment_format mp4 -reset_timestamps 1 -strftime 1 -c:v copy -c:a aac
+  hwaccel_args: preset-vaapi
+
+cameras:
+  przyczepa:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://motioneye:ProsteHaslo1@192.168.60.117:554/Streaming/Channels/101/
+          roles:
+            - detect
+            - record
+    webui_url: "http://192.168.60.117"
