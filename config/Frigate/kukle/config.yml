@@ -47,7 +47,8 @@ record:
       mode: motion
 
 ffmpeg:
-  hwaccel_args: preset-vaapi
+  hwaccel_args:
+    - vaapi
   #hwaccel_args: preset-vaapi
   #hwaccel_args:
   #  - -hwaccel
