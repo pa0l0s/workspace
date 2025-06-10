@@ -48,6 +48,7 @@ record:
 
 ffmpeg:
   hwaccel_args: preset-vaapi
+  #hwaccel_args: preset-vaapi
   #hwaccel_args:
   #  - -hwaccel
   #  - vaapi
