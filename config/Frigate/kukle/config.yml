@@ -1,0 +1,59 @@
+cameras:
+  kuchnia:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://motioneye:ProsteHaslo1@192.168.60.117:554/Streaming/Channels/101/
+          roles:
+            - detect
+            - record
+    detect:
+      width: 1920 # <---- update for your camera's resolution
+      height: 1080 # <---- update for your camera's resolution
+      fps: 10
+# Optional: Database configuration
+database:
+  # The path to store the SQLite DB (default: shown below)
+  path: /config/frigate.db
+
+objects:
+  track:
+    - person
+    - dog
+    - cat
+
+snapshots:
+  enabled: True
+  timestamp: true
+  bounding_box: true
+  retain:
+    default: 30
+mqtt:
+  enabled: False
+#  host: 192.168.200.14
+
+record:
+  enabled: True
+  retain:
+    days: 3
+    mode: all
+  alerts:
+    retain:
+      days: 30
+      mode: motion
+  detections:
+    retain:
+      days: 30
+      mode: motion
+
+ffmpeg:
+  hwaccel_args: preset-vaapi
+  #hwaccel_args:
+  #  - -hwaccel
+  #  - vaapi
+  #  - -hwaccel_device
+  #  - /dev/dri/renderD128
+  #  - -hwaccel_output_format
+  #  - yuv420p
+  output_args:
+     record: -f segment -segment_time 10 -segment_format mp4 -reset_timestamps 1 -strftime 1 -c:v copy -c:a aac
